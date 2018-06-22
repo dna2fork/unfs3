@@ -1,0 +1,10 @@
+*.o
+*.a
+config.log
+autom4te.cache
+unfsd
+Makefile
+config.h.in
+config.h
+config.status
+configure

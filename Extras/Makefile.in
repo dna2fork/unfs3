@@ -3,8 +3,8 @@ CFLAGS = @CFLAGS@
 AR = ar
 RM = rm -f
 
-SOURCES = cluster.c
-OBJS = cluster.o
+SOURCES = cluster/cluster.c
+OBJS = clsuter/cluster.o
 
 all: lib.a
 
