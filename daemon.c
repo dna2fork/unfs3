@@ -78,6 +78,7 @@ int opt_testconfig = FALSE;
 struct in_addr opt_bind_addr;
 int opt_readable_executables = FALSE;
 char *opt_pid_file = NULL;
+int opt_exports_dynamic = FALSE;
 
 /* Register with portmapper? */
 int opt_portmapper = TRUE;
@@ -206,7 +207,7 @@ static void parse_options(int argc, char **argv)
 {
 
     int opt = 0;
-    char *optstring = "bcC:de:hl:m:n:prstTuwi:";
+    char *optstring = "bcC:de:Ehl:m:n:prstTuwi:";
 
     while (opt != -1) {
 	opt = getopt(argc, argv, optstring);
@@ -237,12 +238,16 @@ static void parse_options(int argc, char **argv)
 #endif
 		opt_exports = optarg;
 		break;
+		case 'E':
+		opt_exports_dynamic = TRUE;
+		break;
 	    case 'h':
 		printf(UNFS_NAME);
 		printf("Usage: %s [options]\n", argv[0]);
 		printf("\t-h          display this short option summary\n");
 		printf("\t-u          use unprivileged port for services\n");
 		printf("\t-d          do not detach from terminal\n");
+		printf("\t-E          dynamic load of specific exports file\n");
 		printf("\t-e <file>   file to use instead of /etc/exports\n");
 		printf("\t-i <file>   write daemon pid to given file\n");
 #ifdef WANT_CLUSTER
@@ -318,6 +323,24 @@ static void parse_options(int argc, char **argv)
 		exit(1);
 		break;
 	}
+    }
+}
+
+/*
+ * reload exports file before executing mount
+ */
+void reload_exports(void)
+{
+    static struct timespec exports_timestamp = {0, 0};
+    struct stat exports_state;
+    stat(opt_exports, &exports_state);
+    if (
+        exports_timestamp.tv_sec != exports_state.st_mtimespec.tv_sec ||
+        exports_timestamp.tv_nsec != exports_state.st_mtimespec.tv_nsec
+    ) {
+        exports_parse();
+        exports_timestamp.tv_sec = exports_state.st_mtimespec.tv_sec;
+        exports_timestamp.tv_nsec = exports_state.st_mtimespec.tv_nsec;
     }
 }
 
@@ -599,12 +622,14 @@ static void mountprog_3(struct svc_req *rqstp, register SVCXPRT * transp)
 	    break;
 
 	case MOUNTPROC_MNT:
+	    if (opt_exports_dynamic) reload_exports();
 	    _xdr_argument = (xdrproc_t) xdr_dirpath;
 	    _xdr_result = (xdrproc_t) xdr_mountres3;
 	    local = (char *(*)(char *, struct svc_req *)) mountproc_mnt_3_svc;
 	    break;
 
 	case MOUNTPROC_DUMP:
+	    if (opt_exports_dynamic) reload_exports();
 	    _xdr_argument = (xdrproc_t) xdr_void;
 	    _xdr_result = (xdrproc_t) xdr_mountlist;
 	    local =
@@ -626,6 +651,7 @@ static void mountprog_3(struct svc_req *rqstp, register SVCXPRT * transp)
 	    break;
 
 	case MOUNTPROC_EXPORT:
+	    if (opt_exports_dynamic) reload_exports();
 	    _xdr_argument = (xdrproc_t) xdr_void;
 	    _xdr_result = (xdrproc_t) xdr_exports;
 	    local =
