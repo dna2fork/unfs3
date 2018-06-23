@@ -331,6 +331,9 @@ static void parse_options(int argc, char **argv)
  */
 void reload_exports(void)
 {
+	if (!opt_exports_dynamic) {
+		return;
+	}
     static struct timespec exports_timestamp = {0, 0};
     struct stat exports_state;
     stat(opt_exports, &exports_state);
@@ -622,14 +625,14 @@ static void mountprog_3(struct svc_req *rqstp, register SVCXPRT * transp)
 	    break;
 
 	case MOUNTPROC_MNT:
-	    if (opt_exports_dynamic) reload_exports();
+	    reload_exports();
 	    _xdr_argument = (xdrproc_t) xdr_dirpath;
 	    _xdr_result = (xdrproc_t) xdr_mountres3;
 	    local = (char *(*)(char *, struct svc_req *)) mountproc_mnt_3_svc;
 	    break;
 
 	case MOUNTPROC_DUMP:
-	    if (opt_exports_dynamic) reload_exports();
+	    reload_exports();
 	    _xdr_argument = (xdrproc_t) xdr_void;
 	    _xdr_result = (xdrproc_t) xdr_mountlist;
 	    local =
@@ -651,7 +654,7 @@ static void mountprog_3(struct svc_req *rqstp, register SVCXPRT * transp)
 	    break;
 
 	case MOUNTPROC_EXPORT:
-	    if (opt_exports_dynamic) reload_exports();
+	    reload_exports();
 	    _xdr_argument = (xdrproc_t) xdr_void;
 	    _xdr_result = (xdrproc_t) xdr_exports;
 	    local =
