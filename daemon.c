@@ -331,9 +331,10 @@ static void parse_options(int argc, char **argv)
  */
 void reload_exports(void)
 {
-	if (!opt_exports_dynamic) {
-		return;
-	}
+    if (!opt_exports_dynamic) {
+        return;
+    }
+#ifdef __APPLE__
     static struct timespec exports_timestamp = {0, 0};
     struct stat exports_state;
     stat(opt_exports, &exports_state);
@@ -345,6 +346,15 @@ void reload_exports(void)
         exports_timestamp.tv_sec = exports_state.st_mtimespec.tv_sec;
         exports_timestamp.tv_nsec = exports_state.st_mtimespec.tv_nsec;
     }
+#else
+    static time_t exports_timestamp = 0;
+    struct stat exports_state;
+    stat(opt_exports, &exports_state);
+    if (exports_timestamp != exports_state.st_mtime) {
+        exports_parse();
+        exports_timestamp = exports_state.st_mtime;
+    }
+#endif
 }
 
 /*

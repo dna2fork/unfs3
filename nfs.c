@@ -48,7 +48,7 @@
 #include "daemon.h"
 #include "backend.h"
 #include "Config/exports.h"
-#include "Extras/cluster.h"
+#include "Extras/cluster/cluster.h"
 
 /*
  * decompose filehandle and switch user if permitted access
